@@ -14,7 +14,7 @@ public class TextToSpeech(string voice) {
         var json = new {
             input = text,
             model = "tts-1",
-            response_format = "opus",
+            response_format = "pcm",
             voice
         };
 
