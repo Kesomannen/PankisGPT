@@ -120,7 +120,7 @@ public class PankisDiscordBot {
                     await using var stream = await _tts.Convert(responseText);
                 
                     await message.Channel.SendFileAsync(
-                        new FileAttachment(stream, $"{string.Join(' ', responseText.Split(' ').Take(3))}.pcm"),
+                        new FileAttachment(stream, $"{string.Join(' ', responseText.Split(' ').Take(3))}.mp3"),
                         text: responseText,
                         messageReference: new MessageReference(message.Id)
                     );

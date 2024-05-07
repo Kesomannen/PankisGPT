@@ -18,9 +18,9 @@ const string systemMessage = """
     Svara kortfattat.
 """;
 
-string[] wordsToListenFor = {
+string[] wordsToListenFor = [
     "våffla", "våfflor", "våffel", "waffle", "waffles"
-};
+];
 
 var bot = await PankisDiscordBot.Create(
     Env.DiscordToken,
