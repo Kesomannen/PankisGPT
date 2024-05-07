@@ -50,7 +50,7 @@ bot.OnLog += message => {
     };
     
     var time = DateTime.Now.ToString("HH:mm:ss");
-    Console.WriteLine($"[{time}] {message.Message}");
+    Console.WriteLine($"[{time}] [{message.Source}] {message.Message}");
     Console.ResetColor();
     
     return Task.CompletedTask;

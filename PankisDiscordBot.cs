@@ -58,7 +58,7 @@ public class PankisDiscordBot {
                 return;
             }
 
-            await command.RespondAsync("Nu kör vi 🎉!!!");
+            await command.RespondAsync("Nu kör vi!!! 🎉");
 
             try {
                 using var client = await channel.ConnectAsync();
@@ -129,6 +129,19 @@ public class PankisDiscordBot {
                         await message.Author.SendMessageAsync("Passa dig... https://discord.gg/vRwa8BqpZ3");
                         var guildUser = message.Author as IGuildUser;
                         await guildUser!.KickAsync();
+                    } else {
+                        var channel = (message.Author as IGuildUser)?.VoiceChannel;
+
+                        if (channel != null) {
+                            using var client = await channel.ConnectAsync();
+                            await using var discord = client.CreatePCMStream(AudioApplication.Mixed);
+
+                            try {
+                                await stream.CopyToAsync(discord);
+                            } finally {
+                                await discord.FlushAsync();
+                            }
+                        }
                     }
                 }
             }
@@ -160,7 +173,7 @@ public class PankisDiscordBot {
     }
     
     void Log(object message, LogSeverity severity) {
-        OnLog.Invoke(new LogMessage(severity, "PankisDiscordBot", message.ToString()));
+        OnLog?.Invoke(new LogMessage(severity, "PankisDiscordBot", message.ToString()));
     }
     
     void LogDebug(object message) => Log(message, LogSeverity.Debug);
