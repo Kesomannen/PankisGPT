@@ -58,6 +58,8 @@ public class PankisDiscordBot {
                 return;
             }
 
+            await command.RespondAsync("Nu kör vi 🎉!!!");
+
             try {
                 using var client = await channel.ConnectAsync();
 
