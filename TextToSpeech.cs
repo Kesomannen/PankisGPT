@@ -14,7 +14,8 @@ public class TextToSpeech(string voice) {
         var json = new {
             input = text,
             model = "tts-1",
-            voice = voice
+            response_format = "opus",
+            voice
         };
 
         var content = new StringContent(JsonConvert.SerializeObject(json), Encoding.UTF8);

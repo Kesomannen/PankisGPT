@@ -120,7 +120,7 @@ public class PankisDiscordBot {
                     await using var stream = await _tts.Convert(responseText);
                 
                     await message.Channel.SendFileAsync(
-                        new FileAttachment(stream, $"{string.Join(' ', responseText.Split(' ').Take(3))}.mp3"),
+                        new FileAttachment(stream, $"{string.Join(' ', responseText.Split(' ').Take(3))}.opus"),
                         text: responseText,
                         messageReference: new MessageReference(message.Id)
                     );
@@ -134,7 +134,7 @@ public class PankisDiscordBot {
 
                         if (channel != null) {
                             using var client = await channel.ConnectAsync();
-                            await using var discord = client.CreatePCMStream(AudioApplication.Mixed);
+                            await using var discord = client.CreateOpusStream();
 
                             try {
                                 await stream.CopyToAsync(discord);
