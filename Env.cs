@@ -5,10 +5,14 @@ public static class Env {
     public static string DiscordToken { get; }
     
     static Env() {
-        OpenAIKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Machine) 
-                    ?? throw new Exception("OPENAI_API_KEY is not set");
+        var variables = Environment.GetEnvironmentVariables();
         
-        DiscordToken = Environment.GetEnvironmentVariable("DISCORD_TOKEN", EnvironmentVariableTarget.Machine) 
-                       ?? throw new Exception("DISCORD_TOKEN is not set");
+        Console.WriteLine("Environment variables:");
+        foreach (var variable in variables) {
+            Console.WriteLine(variable);
+        }
+        
+        OpenAIKey = variables["OPENAI_API_KEY"] as string ?? throw new Exception("OPENAI_API_KEY is not set");
+        DiscordToken = variables["DISCORD_TOKEN"] as string ?? throw new Exception("DISCORD_TOKEN is not set");
     }
 }
