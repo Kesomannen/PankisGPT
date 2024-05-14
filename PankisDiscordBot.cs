@@ -37,52 +37,102 @@ public class PankisDiscordBot {
     }
 
     async Task SetupCommands() {
-        _client.SlashCommandExecuted += CaramellDansen;
+        _client.SlashCommandExecuted += HandleCommand;
         
         var guild = _client.GetGuild(1090980892115214418);
-
-        var command = new SlashCommandBuilder()
+        
+        await guild!.CreateApplicationCommandAsync(new SlashCommandBuilder()
             .WithName("caramelldansen")
             .WithDescription("Gör som vi gör, ta några steg åt vänster")
-            .Build();
+            .Build()
+        );
         
-        await guild!.CreateApplicationCommandAsync(command);
+        await guild.CreateApplicationCommandAsync(new SlashCommandBuilder()
+            .WithName("daidalos")
+            .WithDescription("Så skaka loss, med Daidalos!")
+            .Build()
+        );
+
+        await guild.CreateApplicationCommandAsync(new SlashCommandBuilder()
+            .WithName("avrätta")
+            .WithDescription("Försök att avrätta PankisGPT")
+            .Build()
+        );
     }
 
-    async Task CaramellDansen(SocketSlashCommand command) {
-        _ = Task.Run(async () => {
-            var channel = (command.User as IGuildUser)?.VoiceChannel;
+    Task HandleCommand(SocketSlashCommand command) {
+        Func<SocketSlashCommand, Task> cmd = command.Data.Name switch {
+            "caramelldansen" => HandleAudioCommand,
+            "daidalos" => HandleAudioCommand,
+            "avrätta" => ExecuteCommand,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        
+        Task.Run(() => cmd(command));
+        return Task.CompletedTask;
+    }
 
-            if (channel == null) {
-                await command.RespondAsync("Du måste vara i en röstkanal för att använda detta kommando");
-                return;
-            }
+    async Task ExecuteCommand(SocketSlashCommand command) {
+        var time = TimeSpan.FromSeconds(30);
+        
+        var text = $"{command.User.Username} har startat en avrättningsröst mot mig 😡.\n" +
+                   $"Reagera med 🧇 för att avrätta, eller 🥞 för att rädda mig 🙏.\n" +
+                   $"{new TimestampTag(DateTimeOffset.Now + time)}";
 
-            await command.RespondAsync("Nu kör vi!!! 🎉");
+        var msg = await command.Channel.SendMessageAsync(text);
+
+        var pancakeEmoji = Emoji.Parse("🥞");
+        var waffleEmoji = Emoji.Parse("🧇");
+
+        await msg.AddReactionsAsync(new[] { pancakeEmoji, waffleEmoji });
+        
+        await Task.Delay(time);
+        
+        await msg.UpdateAsync();
+        
+        var executed = msg.Reactions[pancakeEmoji].ReactionCount > msg.Reactions[waffleEmoji].ReactionCount;
+        if (executed) {
+            await command.Channel.SendMessageAsync("HEJDÅ 😭");
+            _chat.Reset();
+        } else {
+            await command.Channel.SendMessageAsync("Haha! Jag överlever! 🥞🥞");
+        }
+    }
+
+    async Task HandleAudioCommand(SocketSlashCommand command) {
+        var channel = (command.User as IGuildUser)?.VoiceChannel;
+
+        if (channel == null) {
+            await command.RespondAsync("Du måste vara i en röstkanal för att använda detta kommando");
+            return;
+        }
+
+        await command.RespondAsync("Nu kör vi!!! 🎉");
+
+        try {
+            using var client = await channel.ConnectAsync();
+
+            var file = $"{command.Data.Name}.mp3";
+
+            using var ffmpeg = Process.Start(new ProcessStartInfo {
+                FileName = "ffmpeg",
+                Arguments = $"-hide_banner -loglevel panic -i \"{file}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                UseShellExecute = false,
+                RedirectStandardOutput = true
+            });
+
+            await using var output = ffmpeg!.StandardOutput.BaseStream;
+            await using var discord = client.CreatePCMStream(AudioApplication.Mixed);
 
             try {
-                using var client = await channel.ConnectAsync();
-
-                using var ffmpeg = Process.Start(new ProcessStartInfo {
-                    FileName = "ffmpeg",
-                    Arguments = "-hide_banner -loglevel panic -i \"caramelldansen.mp3\" -ac 2 -f s16le -ar 48000 pipe:1",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true
-                });
-
-                await using var output = ffmpeg!.StandardOutput.BaseStream;
-                await using var discord = client.CreatePCMStream(AudioApplication.Mixed);
-
-                try {
-                    await output.CopyToAsync(discord);
-                } finally {
-                    await discord.FlushAsync();
-                }
+                await output.CopyToAsync(discord);
+            } finally {
+                await discord.FlushAsync();
             }
-            catch (Exception e) {
-                await command.RespondAsync($"Kunde inte spela caramelldansen 😭: {e.Message}");
-            }
-        });
+        }
+        catch (Exception e) {
+            await command.RespondAsync($"Kunde inte spela {command.Data.Name} 😭: {e.Message}");
+        }
     }
 
     void ActivityUpdateLoop() {
