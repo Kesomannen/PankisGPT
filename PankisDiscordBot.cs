@@ -73,6 +73,7 @@ public class PankisDiscordBot {
     }
 
     async Task ExecuteCommand(SocketSlashCommand command) {
+        await command.RespondAsync("grr...", ephemeral: true);
         var time = TimeSpan.FromSeconds(30);
         
         var text = $"{command.User.Username} har startat en avrättningsröst mot mig 😡.\n" +
@@ -84,13 +85,13 @@ public class PankisDiscordBot {
         var pancakeEmoji = Emoji.Parse("🥞");
         var waffleEmoji = Emoji.Parse("🧇");
 
-        await msg.AddReactionsAsync(new[] { pancakeEmoji, waffleEmoji });
+        await msg.AddReactionsAsync(new[] { waffleEmoji, pancakeEmoji });
         
         await Task.Delay(time);
         
         await msg.UpdateAsync();
         
-        var executed = msg.Reactions[pancakeEmoji].ReactionCount > msg.Reactions[waffleEmoji].ReactionCount;
+        var executed = msg.Reactions[waffleEmoji].ReactionCount > msg.Reactions[pancakeEmoji].ReactionCount;
         if (executed) {
             await command.Channel.SendMessageAsync("HEJDÅ 😭");
             _chat.Reset();
