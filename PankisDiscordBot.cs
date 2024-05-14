@@ -13,6 +13,8 @@ public class PankisDiscordBot {
     readonly TextToSpeech _tts;
     readonly Chat _chat;
     readonly MessageFilter _messageFilter;
+
+    bool _executing;
     
     public SocketSelfUser User => _client.CurrentUser;
 
@@ -73,12 +75,18 @@ public class PankisDiscordBot {
     }
 
     async Task ExecuteCommand(SocketSlashCommand command) {
+        if (_executing) {
+            await command.RespondAsync("Jag är redan under avrättning!", ephemeral: true);
+            return;
+        }
+        _executing = true;
+        
         await command.RespondAsync("grr...", ephemeral: true);
         var time = TimeSpan.FromSeconds(30);
         
         var text = $"{command.User.Username} har startat en avrättningsröst mot mig 😡.\n" +
                    $"Reagera med 🧇 för att avrätta, eller 🥞 för att rädda mig 🙏.\n" +
-                   $"{new TimestampTag(DateTimeOffset.Now + time)}";
+                   $"Röstningen avslutas <t:{(DateTimeOffset.Now + time).ToUnixTimeSeconds()}:R>";
 
         var msg = await command.Channel.SendMessageAsync(text);
 
@@ -98,6 +106,8 @@ public class PankisDiscordBot {
         } else {
             await command.Channel.SendMessageAsync("Haha! Jag överlever! 🥞🥞");
         }
+        
+        _executing = false;
     }
 
     async Task HandleAudioCommand(SocketSlashCommand command) {
