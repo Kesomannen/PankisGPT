@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Discord;
 using Discord.Audio;
-using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 
 namespace PankisGPT;
@@ -15,6 +15,9 @@ public class PankisDiscordBot {
     readonly MessageFilter _messageFilter;
 
     bool _executing;
+    int _number;
+    
+    const long GuildId = 1090980892115214418;
     
     public SocketSelfUser User => _client.CurrentUser;
 
@@ -34,14 +37,28 @@ public class PankisDiscordBot {
         _client.MessageReceived += OnMessageReceived;
         _client.UserJoined += OnUserJoined;
         _client.Ready += SetupCommands;
-
+        
+        if (File.Exists("data.txt")) {
+            _number = int.Parse(File.ReadAllText("data.txt"));
+        } else {
+            _number = 1;
+        }
+        
+        _ = Task.Run(UpdateNumber);
         _ = Task.Run(ActivityUpdateLoop);
+    }
+
+    async Task UpdateNumber() {
+        var guild = _client.GetGuild(GuildId);
+        var user = guild.GetUser(_client.CurrentUser.Id);
+        await user!.ModifyAsync(props => props.Nickname = $"PankisGPT #{_number}");
+        await File.WriteAllTextAsync("data.txt", _number.ToString());
     }
 
     async Task SetupCommands() {
         _client.SlashCommandExecuted += HandleCommand;
         
-        var guild = _client.GetGuild(1090980892115214418);
+        var guild = _client.GetGuild(GuildId);
         
         await guild!.CreateApplicationCommandAsync(new SlashCommandBuilder()
             .WithName("caramelldansen")
@@ -83,13 +100,14 @@ public class PankisDiscordBot {
         
         await command.RespondAsync("grr...", ephemeral: true);
         var time = TimeSpan.FromSeconds(30);
+
+        var msg = await SystemMessage(
+            $"{command.User.GlobalName} har startat en avrättningsröst mot mig. " +
+            $"Användarna får nu rösta på om du ska bli avrättad genom att reagera med 🧇 eller räddas genom att reagera med 🥞.",
+            command.Channel,
+            extraLine: $"Röstningen avslutas <t:{(DateTimeOffset.Now + time).ToUnixTimeSeconds()}:R>"
+        );
         
-        var text = $"{command.User.Username} har startat en avrättningsröst mot mig 😡.\n" +
-                   $"Reagera med 🧇 för att avrätta, eller 🥞 för att rädda mig 🙏.\n" +
-                   $"Röstningen avslutas <t:{(DateTimeOffset.Now + time).ToUnixTimeSeconds()}:R>";
-
-        var msg = await command.Channel.SendMessageAsync(text);
-
         var pancakeEmoji = Emoji.Parse("🥞");
         var waffleEmoji = Emoji.Parse("🧇");
 
@@ -97,14 +115,17 @@ public class PankisDiscordBot {
         
         await Task.Delay(time);
         
+        await msg.ModifyAsync(props => props.Content = "Röstningen är avslutad! 🛑");
         await msg.UpdateAsync();
         
         var executed = msg.Reactions[waffleEmoji].ReactionCount > msg.Reactions[pancakeEmoji].ReactionCount;
         if (executed) {
-            await command.Channel.SendMessageAsync("HEJDÅ 😭");
+            await SystemMessage("Röstningen är avslutad och du kommer bli avrättad inom kort", command.Channel);
             _chat.Reset();
+            _number++;
+            await UpdateNumber();
         } else {
-            await command.Channel.SendMessageAsync("Haha! Jag överlever! 🥞🥞");
+            await SystemMessage("Du räddades från avrättningen", command.Channel);
         }
         
         _executing = false;
@@ -114,7 +135,7 @@ public class PankisDiscordBot {
         var channel = (command.User as IGuildUser)?.VoiceChannel;
 
         if (channel == null) {
-            await command.RespondAsync("Du måste vara i en röstkanal för att använda detta kommando");
+            await command.RespondAsync("Du måste vara i en röstkanal för att använda detta kommando", ephemeral: true);
             return;
         }
 
@@ -167,6 +188,23 @@ public class PankisDiscordBot {
             Thread.Sleep(TimeSpan.FromMinutes(1));
         }
     }
+
+    static string GetAudioFileName(string transcript) {
+        return $"{string.Join(' ', transcript.Split(' ').Take(3))}.mp3";
+    }
+
+    async Task<RestUserMessage> SystemMessage(string prompt, ISocketMessageChannel channel, string extraLine = "") {
+        LogVerbose("Prompting ChatGPT with system prompt");
+        var responseText = await _chat.Ask($"[SYSTEM]: {prompt}");
+        LogVerbose("Got response from ChatGPT");
+                
+        await using var stream = await _tts.Convert(responseText);
+        
+        return await channel.SendFileAsync(
+            new FileAttachment(stream, GetAudioFileName(responseText)),
+            text: $"{responseText}\n{extraLine}"
+        );
+    }
     
     Task OnMessageReceived(SocketMessage message) {
         if (!_messageFilter(message, this)) return Task.CompletedTask;
@@ -181,7 +219,7 @@ public class PankisDiscordBot {
                     await using var stream = await _tts.Convert(responseText);
                 
                     await message.Channel.SendFileAsync(
-                        new FileAttachment(stream, $"{string.Join(' ', responseText.Split(' ').Take(3))}.mp3"),
+                        new FileAttachment(stream, GetAudioFileName(responseText)),
                         text: responseText,
                         messageReference: new MessageReference(message.Id)
                     );
