@@ -14,6 +14,7 @@ public class Chat {
         _modelString = model switch {
             Model.Gpt35Turbo => "gpt-3.5-turbo",
             Model.Gpt4Turbo => "gpt-4-turbo",
+            Model.Gpt4o => "gpt-4o",
             _ => throw new ArgumentOutOfRangeException(nameof(model), model, null)
         };
         
@@ -27,7 +28,8 @@ public class Chat {
 
     public enum Model {
         Gpt35Turbo,
-        Gpt4Turbo
+        Gpt4Turbo,
+        Gpt4o
     }
 
     public void Reset() {

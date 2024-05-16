@@ -38,11 +38,7 @@ public class PankisDiscordBot {
         _client.UserJoined += OnUserJoined;
         _client.Ready += SetupCommands;
         
-        if (File.Exists("data.txt")) {
-            _number = int.Parse(File.ReadAllText("data.txt"));
-        } else {
-            _number = 1;
-        }
+        _number = File.Exists("data.txt") ? int.Parse(File.ReadAllText("data.txt")) : 1;
         
         _ = Task.Run(UpdateNumber);
         _ = Task.Run(ActivityUpdateLoop);
@@ -194,6 +190,8 @@ public class PankisDiscordBot {
     }
 
     async Task<RestUserMessage> SystemMessage(string prompt, ISocketMessageChannel channel, string extraLine = "") {
+        using var _ = channel.EnterTypingState();
+        
         LogVerbose("Prompting ChatGPT with system prompt");
         var responseText = await _chat.Ask($"[SYSTEM]: {prompt}");
         LogVerbose("Got response from ChatGPT");
