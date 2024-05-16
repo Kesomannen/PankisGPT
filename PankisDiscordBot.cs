@@ -258,7 +258,7 @@ public class PankisDiscordBot {
 
     public static async Task<PankisDiscordBot> Create(string token, TextToSpeech tts, Chat chat,  MessageFilter messageFilter) {
         var config = new DiscordSocketConfig {
-            GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.GuildMessages | GatewayIntents.MessageContent
+            GatewayIntents = GatewayIntents.All
         };
         
         var client = new DiscordSocketClient(config);

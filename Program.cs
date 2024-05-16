@@ -53,6 +53,7 @@ string[] pancakes = [
     "pannkaka", "pannkakor", "pannkaks", "pancake", "pancakes"
 ];
 
+/*
 var waffleBot = await PankisDiscordBot.Create(
     Env.Get("WAFFLE_DISCORD_TOKEN"),
     new TextToSpeech("nova"),
@@ -65,6 +66,7 @@ var waffleBot = await PankisDiscordBot.Create(
         return pancakes.Any(content.Contains);
     }
 );
+*/
 
 const LogSeverity logLevel = LogSeverity.Debug;
 
@@ -89,6 +91,6 @@ Task Log(LogMessage message) {
 }
 
 pancakeBot.OnLog += Log;
-waffleBot.OnLog += Log;
+//waffleBot.OnLog += Log;
 
 await Task.Delay(-1);
