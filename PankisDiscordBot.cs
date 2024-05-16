@@ -270,7 +270,8 @@ public class PankisDiscordBot {
     }
     
     void Log(object message, LogSeverity severity) {
-        OnLog?.Invoke(new LogMessage(severity, "PankisDiscordBot", message.ToString()));
+        var name = _client?.CurrentUser?.GlobalName ?? "UnknownBot";
+        OnLog?.Invoke(new LogMessage(severity, name, message.ToString()));
     }
     
     void LogDebug(object message) => Log(message, LogSeverity.Debug);
