@@ -82,7 +82,7 @@ Task Log(LogMessage message) {
     };
 
     var time = DateTime.Now.ToString("HH:mm:ss");
-    Console.WriteLine($"[{time}] [{message.Source}] {message.Message}");
+    Console.WriteLine($"[{time}] [{message.Source}] {message.Message ?? message.Exception?.ToString()}");
     Console.ResetColor();
 
     return Task.CompletedTask;
