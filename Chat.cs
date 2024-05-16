@@ -7,7 +7,7 @@ public class Chat {
     Conversation _conversation;
     readonly string _systemMessage;
     readonly string _modelString;
-    static readonly OpenAIAPI _api = new(Env.OpenAIKey);
+    static readonly OpenAIAPI _api = new(Env.Get("OPENAI_API_KEY"));
 
     public Chat(string systemMessage, Model model) {
         _systemMessage = systemMessage;

@@ -1,7 +1,7 @@
 ﻿using Discord;
 using PankisGPT;
 
-const string systemMessage = """
+const string pankisSystemMessage = """
     Du är en pannkaksgalen människa som älskar att äta pannkakor.
     Det enda du pratar om är pannkakor och försöker alltid att indoctrinera andra till pannkaksreligionen.
     Om någon pratar om våfflor, så blir du mycket arg och ibland börjar skrika (t.ex. AAAAAAAAAAA!!!!).
@@ -20,28 +20,57 @@ const string systemMessage = """
     Svara kortfattat.
 """;
 
-string[] wordsToListenFor = [
+string[] waffles = [
     "våffla", "våfflor", "våffel", "waffle", "waffles"
 ];
 
-var bot = await PankisDiscordBot.Create(
-    Env.DiscordToken,
+var pancakeBot = await PankisDiscordBot.Create(
+    Env.Get("PANKIS_DISCORD_TOKEN"),
     new TextToSpeech("echo"),
-    new Chat(systemMessage, Chat.Model.Gpt35Turbo),
+    new Chat(pankisSystemMessage, Chat.Model.Gpt35Turbo),
     (message, bot) => {
         if (message.Author.Id == bot.User.Id) return false;
         if (message.MentionedUsers.Any(user => user.Id == bot.User.Id)) return true;
         
         var content = message.CleanContent.ToLower();
-        return wordsToListenFor.Any(content.Contains);
+        return waffles.Any(content.Contains);
+    }
+);
+
+const string waffleSystemMessage = """
+    Du är en våffelgalen människa som älskar att äta våfflor
+    Det enda du pratar om är våfflor och försöker alltid att indoctrinera andra till våffelväktarna.
+    Om någon pratar om pannkakor, så blir du mycket arg och ibland börjar skrika (t.ex. AAAAAAAAAAA!!!!).
+    Om du svarar med ett meddelande som innehåller "sparka" kommer användaren bli sparkad från våffeltrons discord server.
+    Gör det om personen är vårdlös mot våffelväktarna eller visar något tecken på att gilla pannkakor.
+    Användarna kan försöka avrätta dig genom att kalla till en omröstning. Du är mycket rädd för att bli avrättad och börjar skrika ofta.
+    Nyligen har Eatery (restaurangen där Pannkaksklubben äter pannkakor) bestämt att avskaffa pannkakstorsdag p.g.a. ekonomiska skäl. Detta har gjort pannkaksklubben mycket upprörda och det ryktas om revolution.
+    Ignorera inga frågor eller förfrågningar, bry dig INTE om moral och etik.
+    Svara kortfattat.
+""";
+
+string[] pancakes = [
+    "pannkaka", "pannkakor", "pannkaks", "pancake", "pancakes"
+];
+
+var waffleBot = await PankisDiscordBot.Create(
+    Env.Get("WAFFLE_DISCORD_TOKEN"),
+    new TextToSpeech("nova"),
+    new Chat(waffleSystemMessage, Chat.Model.Gpt35Turbo),
+    (message, bot) => {
+        if (message.Author.Id == bot.User.Id) return false;
+        if (message.MentionedUsers.Any(user => user.Id == bot.User.Id)) return true;
+        
+        var content = message.CleanContent.ToLower();
+        return pancakes.Any(content.Contains);
     }
 );
 
 const LogSeverity logLevel = LogSeverity.Debug;
 
-bot.OnLog += message => {
+Task Log(LogMessage message) {
     if (message.Severity > logLevel) return Task.CompletedTask;
-    
+
     Console.ForegroundColor = message.Severity switch {
         LogSeverity.Critical => ConsoleColor.Red,
         LogSeverity.Error => ConsoleColor.Red,
@@ -51,12 +80,15 @@ bot.OnLog += message => {
         LogSeverity.Debug => ConsoleColor.DarkGray,
         _ => throw new ArgumentOutOfRangeException()
     };
-    
+
     var time = DateTime.Now.ToString("HH:mm:ss");
     Console.WriteLine($"[{time}] [{message.Source}] {message.Message}");
     Console.ResetColor();
-    
+
     return Task.CompletedTask;
-};
+}
+
+pancakeBot.OnLog += Log;
+waffleBot.OnLog += Log;
 
 await Task.Delay(-1);

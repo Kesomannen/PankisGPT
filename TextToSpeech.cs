@@ -9,7 +9,7 @@ public class TextToSpeech(string voice) {
 
     public async Task<Stream> Convert(string text) {
         using var http = new HttpClient();
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Env.OpenAIKey);
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Env.Get("OPENAI_API_KEY"));
 
         var json = new {
             input = text,
