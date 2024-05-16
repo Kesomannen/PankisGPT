@@ -99,7 +99,7 @@ public class PankisDiscordBot {
         _executing = true;
         
         await command.RespondAsync("grr...", ephemeral: true);
-        var time = TimeSpan.FromSeconds(30);
+        var time = TimeSpan.FromMinutes(1);
 
         var msg = await SystemMessage(
             $"{command.User.GlobalName} har startat en avrättningsröst mot mig. " +
